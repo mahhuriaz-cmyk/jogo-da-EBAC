@@ -1,34 +1,37 @@
-//Definir os limites do intervalo e o número máximo de tentativas.
+// Definir os limites do intervalo e o número máximo de tentativas.
 const MIN = 1;
 const MAX = 100;
 const CHANCES_MAX = 10;
 
-//Capturar os elementos do DOM.
+// Capturar os elementos do DOM.
 const palpiteInput = document.getElementById("palpite");
 const dicaElement = document.getElementById("dica");
-const chancesElement =  document.getElementById("chances");
+const chancesElement = document.getElementById("chances");
+// [AJUSTE]: Capturando também o botão de chutar para poder desabilitá-lo ao encerrar
+const btnChutar = document.getElementById("btn-chutar"); 
 
-//Gerar um número secreto aleatório entre 1 e 100.
+// Gerar um número secreto aleatório entre 1 e 100.
 let numeroSecreto = Math.floor(Math.random() * MAX) + MIN;
-//Variável para armazenar o número secreto.
 let tentativasRestantes = CHANCES_MAX;
 
+// [AJUSTE 1]: Variável de estado para controlar se a partida terminou
+let jogoFinalizado = false;
 
-// --- 4. FUNÇÕES AUXILIARES ---
 
+// --- FUNÇÕES AUXILIARES ---
 
-//Função para atualizar o número de tentativas restantes.
+// Função para atualizar o número de tentativas restantes.
 const atualizarChances = () => {
     chancesElement.textContent = `Tentativas restantes: ${tentativasRestantes}`;
-}
+};
 
-  // limpar o input após cada tentativa.
+// Limpar o input após cada tentativa.
 const limparInput = () => {
     palpiteInput.value = "";
     palpiteInput.focus();
 }; 
 
-//Validar se o palpite é um número válido entre 1 e 100.
+// Validar se o palpite é um número válido entre 1 e 100.
 const validarPalpite = (palpite) => {
     if (isNaN(palpite) || palpite < MIN || palpite > MAX) {
         dicaElement.textContent = `Por favor, insira um número válido entre ${MIN} e ${MAX}.`;
@@ -41,41 +44,58 @@ const validarPalpite = (palpite) => {
 atualizarChances();
 
 
-//Função principal do jogo.
-function jogo() {      
-//Capturar o palpite do jogador.
- const palpite = parseInt(palpiteInput.value, 10);
+// --- FUNÇÃO PRINCIPAL DO JOGO ---
+function jogo() { 
+    // [AJUSTE 2]: Verifica se o jogo já terminou. Se sim, bloqueia novas jogadas.
+    if (jogoFinalizado) {
+        return;
+    }
 
-if (!validarPalpite(palpite)) {
+    // Capturar o palpite do jogador.
+    const palpite = parseInt(palpiteInput.value, 10);
+
+    // Validação do palpite (não consome tentativas se for inválido)
+    if (!validarPalpite(palpite)) {
         limparInput();
         return;
     }
 
-    // 3. Comparação: Acertou?
-    if (palpite === numeroSecreto) {
-        dicaElement.textContent = `🎉 Parabéns! Você acertou! O número era ${numeroSecreto}.`;
-        palpiteInput.disabled = true; // Desabilita o campo após vencer
-        return;
-    }
-
-    // 4. Se não acertou, desconta uma tentativa
+    // [AJUSTE 3]: Desconta e atualiza a tentativa LOGO APÓS validar e ANTES de checar acerto/derrota
     tentativasRestantes--;
     atualizarChances();
 
-    // 5. Verifica se as tentativas acabaram
-    if (tentativasRestantes === 0) {
-        dicaElement.textContent = `💥 Você perdeu! O número secreto era ${numeroSecreto}.`;
-        palpiteInput.disabled = true; // Desabilita o campo após perder
+    // [AJUSTE 4]: 1º - Verifica se acertou (mesmo que seja a última tentativa!)
+    if (palpite === numeroSecreto) {
+        dicaElement.textContent = `🎉 Parabéns! Você acertou! O número era ${numeroSecreto}.`;
+        encerrarJogo();
         return;
     }
 
-    // 6. Se ainda tem tentativas, dá a dica se é maior ou menor
+    // [AJUSTE 5]: 2º - Se não acertou, verifica se as tentativas acabaram
+    if (tentativasRestantes === 0) {
+        dicaElement.textContent = `💥 Você perdeu! O número secreto era ${numeroSecreto}.`;
+        encerrarJogo();
+        return;
+    }
+
+    // 3º - Se ainda tem tentativas e não acertou, dá a dica
     if (palpite < numeroSecreto) {
         dicaElement.textContent = "O número secreto é maior!";
     } else {
         dicaElement.textContent = "O número secreto é menor!";
     }
 
-    // 7. Prepara o campo para o próximo palpite
+    // Prepara o campo para o próximo palpite
     limparInput();
+}
+
+// [AJUSTE 6]: Função auxiliar para encerrar a partida e desabilitar os controles
+function encerrarJogo() {
+    jogoFinalizado = true;
+    palpiteInput.disabled = true;
+    
+    // Desabilita o botão de chutar se ele existir no DOM
+    if (btnChutar) {
+        btnChutar.disabled = true;
+    }
 }
